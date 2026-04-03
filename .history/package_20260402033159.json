@@ -1,0 +1,16 @@
+{
+  "name": "socialmediaapp",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "start:dev": "concurrently \"tsc --watch\" \"node --watch dist/main.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  type
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
