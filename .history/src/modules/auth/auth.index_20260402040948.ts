@@ -1,1 +1,0 @@
-export {def authRouter} from './auth.controller'
