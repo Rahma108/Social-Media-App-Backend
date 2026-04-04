@@ -6,9 +6,9 @@ interface IError extends Error {
 export const globalErrorHandler = (err: IError  , req:Request , res:Response , next:NextFunction )=>{
         res.status( err.statusCode || 500 ).json({
             message:err.message || "Internal Server Error" ,
-            stack:err.stack ,
             cause:err.cause,
-            error : err
+            error : err ,
+            stack:err.stack ,
         })
 
 
