@@ -1,3 +1,4 @@
+import { UserModel } from "../../DB/models";
 import { LoginDTO, SignupDTO } from "./auth.dto"
 import { ILoginResponse, ISignupResponse } from "./auth.interface";
 
@@ -8,9 +9,10 @@ export class AuthService {
         return  { email , password }
 
     }
-    signup = (data:SignupDTO):ISignupResponse=> {
+    signup =  async (data:SignupDTO):Promise<string>=> {
         const {username , email , password } = data
-        return  {username , email , password }
+        const user = await UserModel.create({username , email , password })
+        return  "DONE"
     }
 }
 

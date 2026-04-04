@@ -3,11 +3,12 @@ import type { Request , Response , NextFunction } from 'express'
 import { authRouter } from './modules'
 import cors from 'cors'
 import { globalErrorHandler } from './middleware'
-export const bootstrap=()=>{
+import { connectDB } from './DB/connection.db'
+import { PORT } from './config/config'
+export const bootstrap=async ()=>{
     const app:express.Express = express()
     // Global Middleware 
     app.use(cors() , express.json())
-
     // Base Routing 
     app.get('/' , (req:Request , res:Response , next:NextFunction)=>{  
         res.send("Hello World 🤩")
@@ -24,7 +25,8 @@ export const bootstrap=()=>{
     // Global Error Handling 
     app.use(globalErrorHandler);
     
-    app.listen(3000 , ()=>{
+    await connectDB()
+    app.listen(PORT, ()=>{
         console.log(`Server is running on port 3000 🚀`);
         
     })

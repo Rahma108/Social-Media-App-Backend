@@ -18,10 +18,10 @@ router.post('/login'  , validation(LoginSchema), ( req:Request , res:Response , 
     }
 })
 
-router.post('/signup' ,validation(SignupSchema) , (req:Request , res:Response  , next:NextFunction)=>{
+router.post('/signup' ,validation(SignupSchema) , async(req:Request , res:Response  , next:NextFunction)=>{
     try {
-        const result =  AuthService.signup(req.body)
-        return successResponse<ISignupResponse>({res , status:201 , data : result })
+        await AuthService.signup(req.body)
+        return successResponse<ISignupResponse>({res , status:201 })
 
     } catch (error) {
         throw new  BadRequestException("Invalid Body ❌" , {error: JSON.parse(error as string )  } )
