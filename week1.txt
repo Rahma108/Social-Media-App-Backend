@@ -1,0 +1,11 @@
+
+ 
+ 1- Signup  
+ 2- Login
+ 3- Profile 
+ 4- update Password 
+ 5- Forget Password 
+ 6- send Email 
+ 7- authentication
+ 8- authorization
+

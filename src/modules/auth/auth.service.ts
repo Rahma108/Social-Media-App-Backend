@@ -1,4 +1,4 @@
-import { HydratedDocument } from "mongoose";
+
 import { BadRequestException } from "../../common/exception";
 import { UserModel } from "../../DB/models";
 import { UserRepository } from "../../DB/repository/user.repository";
