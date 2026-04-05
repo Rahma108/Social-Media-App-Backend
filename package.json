@@ -4,7 +4,7 @@
   "main": "dist/main.js",
   "scripts": {
     "start:dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"node --watch dist/main.js\"",
-    "start:prod":"cross-env NODE_ENV=production concurrently \"tsc --watch\" \"node --watch dist/main.js\""
+    "start:prod": "cross-env NODE_ENV=production concurrently \"tsc --watch\" \"node --watch dist/main.js\""
   },
   "keywords": [],
   "author": "",
@@ -24,6 +24,7 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.0",
     "mongoose": "^9.4.1",
+    "redis": "^5.11.0",
     "zod": "^4.3.6"
   }
 }

@@ -5,6 +5,8 @@ import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
 import { PORT } from './config/config'
+import { connectRedis } from './DB'
+
 export const bootstrap=async ()=>{
     const app:express.Express = express()
     // Global Middleware 
@@ -26,6 +28,7 @@ export const bootstrap=async ()=>{
     app.use(globalErrorHandler);
     
     await connectDB()
+    await connectRedis()
     app.listen(PORT, ()=>{
         console.log(`Server is running on port 3000 🚀`);
         

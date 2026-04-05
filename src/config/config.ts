@@ -8,3 +8,4 @@ config({
 
 export const PORT = process.env['PORT']  as string
 export const DB_URI = process.env['DB_URI'] as string
+export const REDIS_URI= process.env['REDIS_URI'] as string
