@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>({
     phone :  {type : String , required: false} ,
     profileImage: {type : String , required: false },
     coverImages: {type : [String] , required: false },
-
+    changeCredentialTime:{type:Date } 
 
 
 } , {

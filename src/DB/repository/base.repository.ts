@@ -47,33 +47,26 @@ export abstract  class BaseRepository<TRawDocument> {
     return query.exec();
     }
     
-    findOne ({
-    model , 
-    select,
-    filter,
-    options,
-} :{
-    model : Model<any>, 
-    select?: string;
-    filter: any;
-    options?: {
-        populate?: PopulateOptions | PopulateOptions[];
-        lean?: boolean;
-    };
+    findOne({
+        filter,
+        select,
+        options,
+        }: {
+        filter: any;
+        select?: string;
+        options?: {
+            populate?: PopulateOptions | PopulateOptions[];
+            lean?: boolean;
+        };
+        }) {
+        let doc = this.model.findOne(filter).select(select || "");
 
-}) {
-    let doc = model.findOne(filter).select(select || "");
-    if (options?.populate) {
-        doc = doc.populate(options.populate);
-    }
+        if (options?.populate) {
+            doc = doc.populate(options.populate);
+        }
 
-    if (options?.lean) {
-        doc = doc.lean();
-    }
-
-    return doc.exec();
+        return doc.exec();
 }
-    
     async find({ model, select, filter, options }: any) {
         let doc = model.find(filter || {}).select(select || "");
 

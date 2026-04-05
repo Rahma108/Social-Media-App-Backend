@@ -1,5 +1,26 @@
 import { redisClient } from "../../DB";
+import { EmailEnum } from "../enums";
 
+
+export const baseRevokeTokenKey = (userId: string): string => {
+    return `RevokeToken::${userId}`;
+};
+
+export const revokeTokenKey = ({ userId, jti }: { userId: string; jti: string }): string => {
+    return `${baseRevokeTokenKey(userId)}::${jti}`;
+};
+
+export const otpKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
+    return `OTP:USER::${email}::${type}`;
+};
+
+export const otpMaxRequestKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
+    return `${otpKey({ email, type })}::Request`;
+};
+
+export const otpBlockKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
+    return `${otpKey({ email, type })}::Block::Request`;
+};
 type SetParams = {
     key: string;
     value: any;

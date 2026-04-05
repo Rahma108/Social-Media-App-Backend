@@ -18,6 +18,7 @@ export const bootstrap=async ()=>{
     })
     // app routing ...
     app.use("/auth" , authRouter)
+    // app.use('/user', userRouter)
 
     // Invalid Routing 
     app.use('/*dummy' ,  (req:Request , res:Response , next:NextFunction)=>{  

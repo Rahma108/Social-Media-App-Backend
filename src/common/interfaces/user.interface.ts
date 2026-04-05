@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { GenderEnum, RoleEnum } from "../enums";
 
 
@@ -17,5 +18,6 @@ export interface IUser {
     coverImages?: string[],
     createdAt?: Date;
     updatedAt?: Date;
-
+    _id: Types.ObjectId;
+    changeCredentialTime?:Date
 }

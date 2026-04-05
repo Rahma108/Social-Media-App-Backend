@@ -24,3 +24,39 @@ export const SignupSchema  = {
     })
 
 }
+
+
+export const confirmEmailSchema = {
+    body:z.strictObject({
+    email:generalValidationFields.email,
+    otp:generalValidationFields.otp
+})
+}
+
+export const resendConfirmEmailSchema = {
+    body:z.strictObject({
+    email:generalValidationFields.email
+})
+}
+export const verifyEmailSchema = {
+    body:z.strictObject({
+    email:generalValidationFields.email
+})
+}
+
+export const verifyForgotPasswordSchema = {
+    body:z.strictObject({
+    otp:generalValidationFields.otp
+})
+}
+export const resetForgotPasswordSchema = {
+    body: verifyForgotPasswordSchema.body.extend({
+    password: generalValidationFields.password,
+    confirmPassword: generalValidationFields.confirmPassword,
+    }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+    }),
+}
+
+
