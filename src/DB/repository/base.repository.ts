@@ -1,71 +1,105 @@
 
-import { CreateOptions, HydratedDocument, Model, PopulateOptions } from "mongoose";
-import { IUser } from "../../common/interfaces";
-
+import {MongooseUpdateQueryOptions ,UpdateQuery, AnyKeys, CreateOptions, FlattenMaps, HydratedDocument, Model, PopulateOptions, ProjectionType, QueryFilter, QueryOptions, Types, UpdateWithAggregationPipeline, UpdateResult, UpdateWriteOpResult, DeleteResult } from "mongoose";
 
 export abstract  class BaseRepository<TRawDocument> {
 
     constructor(protected readonly  model : Model<TRawDocument>){
 
     }
-    create( {data , options} :{data: Partial<IUser>[] , options?:CreateOptions} ):Promise<HydratedDocument<TRawDocument> [] > {
+    // Overloading ...............
+    create( {data } :{data: AnyKeys<TRawDocument>} )  //  Prototype CreateOne
+    :Promise<HydratedDocument<TRawDocument>>    
+
+    create( {data , options} :{data: AnyKeys<TRawDocument>[] , options?:CreateOptions} )  // Prototype Create
+    :Promise<HydratedDocument<TRawDocument> [] > 
+
+    create( {data , options} :{data: AnyKeys<TRawDocument>[] | AnyKeys<TRawDocument> , options?:CreateOptions} )
+    :Promise<HydratedDocument<TRawDocument> [] | HydratedDocument<TRawDocument> > {
         return this.model.create(data as any  , options)
     }
     
-    createOne({
+    async createOne({
         data,
-        options
+        options = {} 
         }: {
-        data: Partial<IUser>,
-        options?: CreateOptions
+        data: Partial<TRawDocument>,
+        options?: CreateOptions | undefined
         }): Promise<HydratedDocument<TRawDocument>> {
 
-        return this.model.create(data as any, options) as Promise<HydratedDocument<TRawDocument>>;
+        const [doc ] = await  this.create({data: [ data] , options : options }) || []
+        return doc  as HydratedDocument<TRawDocument>
         }
-    findById({
-    id,
-    select,
-    options,
-    }: {
-    id: string;
-    select?: string;
-    options?: {
-        populate?: PopulateOptions | PopulateOptions[];
-        lean?: boolean;
-    };
-    }): Promise<any> {
-    let query = this.model.findById(id).select(select || "");
-
-    if (options?.populate) {
-        query = query.populate(options.populate);
-    }
-
-    if (options?.lean) {
-        return query.lean().exec();
-    }
-
-    return query.exec();
-    }
     
-    findOne({
+    async findOne({
         filter,
-        select,
+        projection,
         options,
         }: {
-        filter: any;
-        select?: string;
-        options?: {
-            populate?: PopulateOptions | PopulateOptions[];
-            lean?: boolean;
-        };
-        }) {
-        let doc = this.model.findOne(filter).select(select || "");
+        filter: QueryFilter<TRawDocument>;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument> & {lean : false}
+        }) : Promise<HydratedDocument<TRawDocument> | null>
+    async findOne({
+        filter,
+        projection,
+        options,
+        }: {
+        filter: QueryFilter<TRawDocument>;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument>  & {lean : true }
+        }) : Promise< FlattenMaps<TRawDocument> | null>
 
-        if (options?.populate) {
-            doc = doc.populate(options.populate);
+        async findOne({
+        filter={},
+        projection,
+        options,
+        }: {
+        filter: QueryFilter<TRawDocument>;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument>
+        }) : Promise< FlattenMaps<TRawDocument> | HydratedDocument<TRawDocument> | null>{
+        const doc =  this.model.findOne(filter , projection  , options);
+        if(options?.lean){
+            doc.lean()
         }
+        if(options?.populate) doc.populate(options.populate as PopulateOptions[])
+        return await doc.exec()
+    }
+    async findById({
+        _id,
+        projection,
+        options,
+        }: {
+        _id: Types.ObjectId;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument> & {lean : false}
+        }) : Promise<HydratedDocument<TRawDocument> | null>
+    async findById({
+        _id,
+        projection,
+        options,
+        }: {
+        _id: Types.ObjectId;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument>  & {lean : true }
+        }) : Promise< FlattenMaps<TRawDocument> | null>
 
-        return doc.exec();
+
+    async findById({
+        _id,
+        projection,
+        options,
+        }: {
+        _id: Types.ObjectId;
+        projection?: ProjectionType<TRawDocument> | null | undefined;
+        options?: QueryOptions<TRawDocument>
+        }) : Promise< FlattenMaps<TRawDocument> | HydratedDocument<TRawDocument> | null>{
+        const doc =  this.model.findById( _id , projection);
+        if(options?.lean){
+            doc.lean()
+        }
+        if(options?.populate) doc.populate(options.populate as PopulateOptions[])
+        return await doc.exec()
 }
     async find({ model, select, filter, options }: any) {
         let doc = model.find(filter || {}).select(select || "");
@@ -133,102 +167,95 @@ export abstract  class BaseRepository<TRawDocument> {
         return await model.insertMany(data);
         };
 
-    updateOne = async ({
-        model,
-        filter,
+    async updateOne({
+        filter = {},
         update,
-        options,
-        }: {
-        model: Model<any>;
-        filter?: any;
-        update: any;
-        options?: any;
-        }) => {
-        const newUpdate = { ...update };
+        options
+    } :{
+        filter: QueryFilter<TRawDocument>,
+        update: UpdateQuery<TRawDocument> | UpdateWithAggregationPipeline,
+        options?: MongooseUpdateQueryOptions<TRawDocument>
+    } 
+    ):Promise<UpdateWriteOpResult>{
+        return await this.model.updateOne(filter , update , options )
+    }
 
-        if (newUpdate.$inc) {
-            newUpdate.$inc = { ...newUpdate.$inc, __v: 1 };
-        } else {
-            newUpdate.$inc = { __v: 1 };
-        }
-
-        return await model.updateOne(filter || {}, newUpdate, {
-            ...options,
-            runValidators: true,
-        });
-    };
-
-    findOneAndUpdate = async ({
-        model,
-        filter,
+    async updateMany({
+        filter = {},
         update,
-        options,
-        }: {
-        model: Model<any>;
-        filter?: any;
-        update: any;
-        options?: any;
-        }) => {
-        return await model.findOneAndUpdate(
-            filter || {},
-            { ...update, $inc: { __v: 1 } },
-            {
-            new: true,
-            runValidators: true,
-            ...options,
-            }
-        );
-    };
+        options
+    } :{
+        filter: QueryFilter<TRawDocument>,
+        update: UpdateQuery<TRawDocument> | UpdateWithAggregationPipeline,
+        options?: MongooseUpdateQueryOptions<TRawDocument>
+    } 
+    ):Promise<UpdateWriteOpResult>{
+        return await this.model.updateMany(filter , update , options )
+    }
 
-    findByIdAndUpdate = async ({
-        id,
+    async deleteOne({
+        filter ={},
+    } :{
+        filter: QueryFilter<TRawDocument>,
+    } 
+    ):Promise<DeleteResult>{
+        return await this.model.deleteOne(filter)
+    }
+
+    async deleteMany({
+        filter={} ,
+    } :{
+        filter: QueryFilter<TRawDocument>,
+    } 
+    ):Promise<DeleteResult>{
+        return await this.model.deleteMany(filter)
+    }
+
+    async findOneAndUpdate({
+        filter = {},
         update,
-        options = { new: true },
-        model,
-        }: {
-        id: string;
-        update: any;
-        options?: any;
-        model: Model<any>;
-        }) => {
-        return await model.findByIdAndUpdate(
-            id,
-            { ...update, $inc: { __v: 1 } },
-            {
-            ...options,
-            runValidators: true,
-            }
-        );
-    };
+        options
+    } :{
+        filter: QueryFilter<TRawDocument>,
+        update: UpdateQuery<TRawDocument> | UpdateWithAggregationPipeline,
+        options?: MongooseUpdateQueryOptions<TRawDocument>
+    } 
+    ):Promise<HydratedDocument<TRawDocument> | null >{
+        return await this.model.findOneAndUpdate(filter , update , options )
+    }
 
-    deleteOne = async ({
-    filter,
-    model,
-    }: {
-    filter?: any;
-    model: Model<any>;
-    }) => {
-    return await model.deleteOne(filter || {});
-    };
+    async findByAndUpdate({
+        _id,
+        update,
+        options
+    } :{
+        _id : Types.ObjectId ,
+        update: UpdateQuery<TRawDocument> | UpdateWithAggregationPipeline,
+        options?: MongooseUpdateQueryOptions<TRawDocument>
+    } 
+    ):Promise<HydratedDocument<TRawDocument> | null >{
+        return await this.model.findByIdAndUpdate(_id , update , options )
+    }
 
-    deleteMany = async ({
-        filter,
-        model,
-        }: {
-        filter?: any;
-        model: Model<any>;
-        }) => {
-        return await model.deleteMany(filter || {});
-    };
-
-    findOneAndDelete = async ({
-        filter,
-        model,
-        }: {
-        filter?: any;
-        model: Model<any>;
-        }) => {
-        return await model.findOneAndDelete(filter || {});
-    };
+    async findOneAndDelete({
+        filter = {},
+        options
+    } :{
+        filter: QueryFilter<TRawDocument>,
+        options?: QueryOptions<TRawDocument>
+    } 
+    ):Promise<HydratedDocument<TRawDocument> | null >{
+        return await this.model.findOneAndDelete(filter , options )
+    }
+    async findByIdAndDelete({
+    _id ,
+        options
+    } :{
+        _id : Types.ObjectId ,
+        options?: QueryOptions<TRawDocument>
+    } 
+    ):Promise<HydratedDocument<TRawDocument> | null >{
+        return await this.model.findByIdAndDelete(_id , options )
+    }
 
 }

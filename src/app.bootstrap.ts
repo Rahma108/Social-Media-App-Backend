@@ -1,3 +1,4 @@
+import { redisService } from './common/service/redis.service';
 import express from 'express'
 import type { Request , Response , NextFunction } from 'express'
 import { authRouter } from './modules'
@@ -5,8 +6,6 @@ import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
 import { PORT } from './config/config'
-import { connectRedis } from './DB'
-
 export const bootstrap=async ()=>{
     const app:express.Express = express()
     // Global Middleware 
@@ -29,7 +28,8 @@ export const bootstrap=async ()=>{
     app.use(globalErrorHandler);
     
     await connectDB()
-    await connectRedis()
+    await redisService.connectRedis()
+    await redisService.set({key : "name" , value:"rahma" , ttl:200})
     app.listen(PORT, ()=>{
         console.log(`Server is running on port 3000 🚀`);
         

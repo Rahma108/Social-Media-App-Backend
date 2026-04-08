@@ -2,16 +2,8 @@ import { APPLICATION_NAME, GMAIL, PASSWORD } from "../../../config/config";
 
 import nodemailer from 'nodemailer'
 
-import { Attachment } from "nodemailer/lib/mailer";
+import { MailOptions } from "nodemailer/lib/sendmail-transport";
 
-interface SendEmailParams {
-    to: string | string[];
-    cc?: string | string[];
-    bcc?: string | string[];
-    subject: string;
-    html: string;
-    attachments?: Attachment[];
-}
 export const sendEmail = async ({
     to,
     cc,
@@ -19,7 +11,7 @@ export const sendEmail = async ({
     subject,
     html,
     attachments = [],
-    }: SendEmailParams) => {
+    }: MailOptions):Promise<void> => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -40,7 +32,6 @@ export const sendEmail = async ({
         });
 
         console.log("Message sent:", info.messageId);
-        return info;
     } catch (error) {
         console.error("Failed to send email:", error);
         throw error;

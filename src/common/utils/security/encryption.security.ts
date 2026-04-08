@@ -7,7 +7,7 @@ const algorithm = 'aes-256-cbc';
 
 const key = Buffer.from(SECURITY_KEY); 
 
-export const encrypt = (text: string) => {
+export const encrypt = async(text: string):Promise<string>  => {
 
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -16,7 +16,7 @@ export const encrypt = (text: string) => {
     return iv.toString('hex') + ':' + encrypted;
 };
 
-export const decrypt = (data: string): string => {
+export const decrypt = async(data: string): Promise<string> => {
     const parts = data.split(":");
 
     if (parts.length !== 2 || !parts[0] || !parts[1]) {

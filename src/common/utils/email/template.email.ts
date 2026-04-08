@@ -2,7 +2,7 @@ import { GITHUB, INSTAGRAM_LINK, LINKEDIN_LINK } from "../../../config/config"
 
 
 interface EmailTemplateParams {
-    code: string;
+    code: number;
     title: string;
 }
 

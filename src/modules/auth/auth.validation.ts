@@ -8,11 +8,12 @@ export const LoginSchema = {
         password:generalValidationFields.password,
     })
 }
-
 export const SignupSchema  = {
     body : LoginSchema.body.extend({
         username :generalValidationFields.username ,
-        confirmPassword:generalValidationFields.confirmPassword
+        confirmPassword:generalValidationFields.confirmPassword,
+        phone : generalValidationFields.phone
+        
     }).superRefine((data , ctx)=>{
         if(data.password !== data.confirmPassword){
             ctx.addIssue({
@@ -22,10 +23,7 @@ export const SignupSchema  = {
             })
         }
     })
-
 }
-
-
 export const confirmEmailSchema = {
     body:z.strictObject({
     email:generalValidationFields.email,

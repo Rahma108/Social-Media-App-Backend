@@ -1,6 +1,6 @@
 
 import { model, models  , Schema }  from "mongoose";
-import { GenderEnum, RoleEnum } from "../../common/enums";
+import { GenderEnum, ProviderEnum, RoleEnum } from "../../common/enums";
 import { IUser } from "../../common/interfaces";
 const userSchema = new Schema<IUser>({
 
@@ -22,10 +22,13 @@ const userSchema = new Schema<IUser>({
         enum: Object.values(RoleEnum).filter(v => typeof v === "number"),
         default: RoleEnum.USER
         },
-    phone :  {type : String , required: false} ,
+    phone :  {type : String , required: true} ,
     profileImage: {type : String , required: false },
     coverImages: {type : [String] , required: false },
-    changeCredentialTime:{type:Date } 
+    changeCredentialTime:{type:Date } ,
+    confirmEmail : {type:Date } ,
+    provider: {type :  Number , enum :Object.values(ProviderEnum).filter(v => typeof v === "number") ,  
+        default: ProviderEnum.SYSTEM}
 
 
 } , {

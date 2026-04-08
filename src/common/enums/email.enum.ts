@@ -1,5 +1,5 @@
 export enum EmailEnum  {
-    confirmEmail=0 ,
-    ForgotPassword =1 ,
-    TwoStepsVerification = 2
+    confirmEmail= "confirm_Email",
+    ForgotPassword ="forgot_password",
+    TwoStepsVerification = "TwoStepsVerification"
 }

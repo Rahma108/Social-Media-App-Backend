@@ -1,26 +1,8 @@
-import { redisClient } from "../../DB";
+import { createClient, RedisClientType } from "redis";
+import { REDIS_URI } from "../../config/config";
 import { EmailEnum } from "../enums";
+import { Types } from "mongoose";
 
-
-export const baseRevokeTokenKey = (userId: string): string => {
-    return `RevokeToken::${userId}`;
-};
-
-export const revokeTokenKey = ({ userId, jti }: { userId: string; jti: string }): string => {
-    return `${baseRevokeTokenKey(userId)}::${jti}`;
-};
-
-export const otpKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
-    return `OTP:USER::${email}::${type}`;
-};
-
-export const otpMaxRequestKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
-    return `${otpKey({ email, type })}::Request`;
-};
-
-export const otpBlockKey = ({ email, type = EmailEnum.confirmEmail }: { email: string; type?: EmailEnum }): string => {
-    return `${otpKey({ email, type })}::Block::Request`;
-};
 type SetParams = {
     key: string;
     value: any;
@@ -34,18 +16,51 @@ type ExpireParams = {
     ttl:  number ;
 };
 
-export const set = async ({ key, value, ttl }: SetParams): Promise<string | null> => {
+type BaseKeyType ={
+    email: string; type?: EmailEnum 
+}
+ class RedisService{
+    private client : RedisClientType;
+    constructor(){
+        this.client = createClient({
+            url:REDIS_URI
+        })
+        this.handleEvents()
+    }
+    private handleEvents(){
+        this.client.on("connect", ()=>
+            console.log(`REDIS_DB CONNECTED SUCCESSFULLY ✔️`)) 
+        this.client.on("error", (error)=>
+            console.log(`FAIL TO CONNECT ON REDIS_DB ❌${error}`) )
+        this.client.on("end", () => {
+            console.log("Redis connection closed ❌");
+            });
+
+            this.client.on("reconnecting", () => {
+            console.log("Redis reconnecting 🔄");
+            });
+      
+    }
+
+
+    public connectRedis = async()=>{
+    try {
+        if (this.client.isOpen) return;
+            await this.client.connect()
+    } catch (error) {
+        console.log(`FAIL TO CONNECT ON REDIS_DB ❌${error}`)
+    }
+}
+
+    public set = async ({ key, value, ttl }: SetParams): Promise<any> => {
     try {
         const data = typeof value === "string" ? value : JSON.stringify(value);
-
         let result: string | null;
-
         if (ttl) {
-        result = (await redisClient.set(key, data, { EX: ttl })) as string | null;
+        result = (await this.client.set(key, data, { EX: ttl })) as string | null;
         } else {
-        result = (await redisClient.set(key, data)) as string | null;
+        result = (await this.client.set(key, data)) as string | null;
         }
-
         return result ?? null;
 
     } catch (error) {
@@ -53,27 +68,68 @@ export const set = async ({ key, value, ttl }: SetParams): Promise<string | null
         return null;
     }
 };
+    baseRevokeTokenKey = (userId: Types.ObjectId|string): string => {
+    return `RevokeToken::${userId}`;
+};
 
-export const update = async ({ key, value, ttl }: SetParams): Promise<string | null> => {
+    revokeTokenKey = ({ userId, jti }: { userId:  Types.ObjectId|string , jti: string }): string => {
+    return `${this.baseRevokeTokenKey(userId)}::${jti}`;
+};
+
+    otpKey = ({ email, type = EmailEnum.confirmEmail }: BaseKeyType ): string => {
+    return `OTP:USER::${email}::${type}`;
+};
+
+    otpMaxRequestKey = ({ email, type = EmailEnum.confirmEmail }: BaseKeyType ): string => {
+    return `${this.otpKey({ email, type })}::Request`;
+};
+
+    otpBlockKey = ({ email, type = EmailEnum.confirmEmail }:BaseKeyType ): string => {
+    return `${this.otpKey({ email, type })}::Block::Request`;
+};
+
+    public exists = async (key : string) => {
     try {
-        const existsKey = await redisClient.exists(key);
-        if (!existsKey) return null;
-
-        return await set({ key, value, ttl });
+        return  await this.client.exists(key);
     } catch (error) {
-        console.log(`Fail in redis update Operations ${error}`);
-        return null
+        console.log(`Fail in redis Exists Operations ${error}`);
+        return ;
     }
 };
 
-export const get = async (key: string): Promise<any > => {
+    public ttl = async (key : string) :Promise<number> => {
     try {
-        const data = await redisClient.get(key);
+ 
+        return  await this.client.ttl(key);
+    } catch (error) {
+        console.log(`Fail in redis TTL Operations ${error}`);
+        return  -1;
+    }
+};
 
+    public  expire = async ({key  , ttl }  : ExpireParams) => {
+    try {
+        return  await this.client.expire(key , ttl);
+    } catch (error) {
+        console.log(`Fail in redis Expire Operations ${error}`);
+        return ;
+    }
+};
+
+    public  keys = async (prefix:string) : Promise<string[]> => {
+    try {
+        return  await this.client.keys(`${prefix}*`);
+    } catch (error) {
+        console.log(`Fail in redis Prefix Operations ${error}`);
+        return [];
+    }
+}
+    public  get = async (key: string): Promise<any > => {
+    try {
+        const data = await this.client.get(key);
         if (!data) return null;
-
         try {
-        return JSON.parse(data);
+        return JSON.parse(data as string);
         } catch {
         return data;
         }
@@ -82,43 +138,48 @@ export const get = async (key: string): Promise<any > => {
     }
 };
 
-export const mGet = async (keys: string[] = []): Promise<any[]> => {
+    public mGet = async (keys: string[] = []): Promise<any[]> => {
     try {
         if (!keys.length) return [];
 
-        return await redisClient.mGet(keys);
+        return await this.client.mGet(keys);
     } catch (error) {
         console.log(`Fail in redis mGet Operations ${error}`);
         return [];
     }
 };
 
-export const deleteKeys = async (keys: string[]): Promise<number> => {
+    public deleteKeys = async (keys: string | string[]): Promise<number> => {
     try {
         if (!keys.length) return 0;
-        return await (redisClient.del as any)(...keys);
+        return await this.client.del(keys);
     } catch (error) {
         console.log(`Fail in redis del Operations ${error}`);
         return 0;
     }
 };
 
-export const expire = async ({ key, ttl }: ExpireParams): Promise<boolean> => {
+    public update = async ({ key, value, ttl }: SetParams): Promise<any> => {
     try {
-        const result =  await redisClient.expire(key, ttl);
-        return result === 1;
+        if(!await this.exists(key))return 0;
+        return this.set({key, value, ttl})
     } catch (error) {
-        console.log(`Fail in redis expire Operations ${error}`);
-        return false;
+        console.log(`Fail in redis update Operations ${error}`);
+        return null;
     }
 };
 
-
-export const increment = async (key:KeyParam ): Promise<number> => {
+    public increment = async (key:KeyParam ): Promise<number> => {
     try {
-        return await redisClient.incr(key);
+        return await this.client.incr(key);
     } catch (error) {
         console.log(`FAIL IN REDIS INCREMENT OPERATIONS ${error}🫠`);
         return 0;
     }
 };
+
+}
+
+export const redisService = new RedisService()
+
+
