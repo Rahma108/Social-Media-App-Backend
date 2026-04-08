@@ -1,7 +1,7 @@
 import { redisService } from './common/service/redis.service';
 import express from 'express'
 import type { Request , Response , NextFunction } from 'express'
-import { authRouter } from './modules'
+import { authRouter, userRouter } from './modules'
 import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
@@ -17,7 +17,7 @@ export const bootstrap=async ()=>{
     })
     // app routing ...
     app.use("/auth" , authRouter)
-    // app.use('/user', userRouter)
+    app.use('/user', userRouter)
 
     // Invalid Routing 
     app.use('/*dummy' ,  (req:Request , res:Response , next:NextFunction)=>{  

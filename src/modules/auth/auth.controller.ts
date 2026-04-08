@@ -9,7 +9,6 @@ import { validation } from "../../middleware";
 import { ILoginResponse } from "./auth.interface";
 
 const router: RouterType = Router()
-// const tokenService = new TokenService();
 router.post('/login', validation(validators.LoginSchema), async( req:Request , res:Response , next:NextFunction )=>{
     try {
         const result = await AuthService.login(req.body , `${req.protocol}://${req.host}`)
@@ -19,7 +18,7 @@ router.post('/login', validation(validators.LoginSchema), async( req:Request , r
         throw  error
     }
 })
-router.patch('/confirm-email' ,  validation(validators.confirmEmailSchema) , async(req , res , next ): Promise<Response>=>{
+router.patch('/confirm-email' ,  validation(validators.confirmEmailSchema) , async(req:Request , res:Response , next:NextFunction): Promise<Response>=>{
     try {
         await AuthService.confirmEmail(req.body)
         return successResponse({res})
@@ -28,7 +27,7 @@ router.patch('/confirm-email' ,  validation(validators.confirmEmailSchema) , asy
     }
 })
 
-router.patch('/resend-confirm-email' ,  validation(validators.resendConfirmEmailSchema) , async(req , res , next ): Promise<Response>=>{
+router.patch('/resend-confirm-email' ,  validation(validators.resendConfirmEmailSchema) , async(req:Request , res:Response , next:NextFunction ): Promise<Response>=>{
     try {
         await AuthService.reSendConfirmEmail(req.body)
         return successResponse({res})

@@ -8,10 +8,10 @@ import { TokenService } from "../common/service/token.service"
 
 
 export const authentication = (
-  tokenService: TokenService,
   tokenType = TokenTypeEnum.access
 ) => {
   return async (req: Request, res: Response, next: NextFunction) => {
+    const tokenService : TokenService = new TokenService()
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -31,8 +31,8 @@ export const authentication = (
           tokenType,
         });
 
-        (req as any).user = user ;
-        (req as any).decoded = decoded
+        req.user = user ;
+        req.decoded = decoded
         break;
       }
 
@@ -45,7 +45,7 @@ export const authentication = (
 };
 
 export const authorization =  ( accessRoles : RoleEnum[]  )=>{
-    return async  (req: Request, res: Response, next: NextFunction )=>{
+    return async  (req:Request, res: Response, next: NextFunction )=>{
       const user = (req as any).user;
             if(!accessRoles.includes(user.role)){
                 throw new ForbiddenException("Not allowed account !")
