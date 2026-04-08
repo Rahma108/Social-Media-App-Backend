@@ -1,11 +1,16 @@
+
 import type { NextFunction, Request, Response } from "express"
 import { BadRequestException } from "../common/exception"
-import { decodeToken } from "../common/utils/security"
 import { TokenTypeEnum } from "../common/enums/security.enum"
+import { RoleEnum } from "../common/enums"
+import { ForbiddenException } from "../common/exception"
+import { TokenService } from "../common/service/token.service"
 
 
-
-export const authentication = (tokenType = TokenTypeEnum.access) => {
+export const authentication = (
+  tokenService: TokenService,
+  tokenType = TokenTypeEnum.access
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
@@ -20,21 +25,14 @@ export const authentication = (tokenType = TokenTypeEnum.access) => {
     }
 
     switch (flag) {
-      case "Basic": {
-        const data = Buffer.from(credentials, "base64").toString();
-        const [username, password] = data.split(":");
-        console.log({ username, password });
-        break;
-      }
-
       case "Bearer": {
-        const { user, decoded } = await decodeToken({
+        const { user, decoded } = await tokenService.decodeToken({
           token: credentials,
           tokenType,
         });
 
-        req.user = user;
-        req.decoded = decoded;
+        (req as any).user = user ;
+        (req as any).decoded = decoded
         break;
       }
 
@@ -46,3 +44,15 @@ export const authentication = (tokenType = TokenTypeEnum.access) => {
   };
 };
 
+export const authorization =  ( accessRoles : RoleEnum[]  )=>{
+    return async  (req: Request, res: Response, next: NextFunction )=>{
+      const user = (req as any).user;
+            if(!accessRoles.includes(user.role)){
+                throw new ForbiddenException("Not allowed account !")
+            }
+            
+            next()
+    }
+    
+
+  }

@@ -2,21 +2,21 @@
 import { Router } from "express"; 
 import type { NextFunction, Request , Response , Router as RouterType } from "express";
 import AuthService from "./auth.service";
-import { ILoginResponse} from "./auth.interface";
 import { successResponse } from "../../common/response";
-import { BadRequestException } from "../../common/exception";
-
 import { IUser } from "../../common/interfaces";
 import * as validators from './auth.validation'
 import { validation } from "../../middleware";
+import { ILoginResponse } from "./auth.interface";
+
 const router: RouterType = Router()
-router.post('/login'  , validation(validators.LoginSchema), ( req:Request , res:Response , next:NextFunction )=>{
+// const tokenService = new TokenService();
+router.post('/login', validation(validators.LoginSchema), async( req:Request , res:Response , next:NextFunction )=>{
     try {
-        const result = AuthService.login(req.body)
-        return successResponse<ILoginResponse>({res , status:200 , data : result })
+        const result = await AuthService.login(req.body , `${req.protocol}://${req.host}`)
+        return successResponse<ILoginResponse>({res , data : result })
 
     } catch (error) {
-        throw new  BadRequestException("Invalid Body ❌" , {error: error} )
+        throw  error
     }
 })
 router.patch('/confirm-email' ,  validation(validators.confirmEmailSchema) , async(req , res , next ): Promise<Response>=>{

@@ -7,14 +7,17 @@ import { createNumberOtp } from "../../common/utils/otp";
 import { compareHash, encrypt, generateHash } from "../../common/utils/security";
 import { UserRepository } from "../../DB/repository/user.repository";
 import { ConfirmEmailDTO, LoginDTO, SignupDTO } from "./auth.dto"
-import { ILoginResponse} from "./auth.interface";
-import { redisService } from "../../common/service";
+import { redisService, } from "../../common/service";
+import { TokenService } from "../../common/service/token.service";
+
 export class AuthService {
     // To reach any Repository ..
     private readonly userRepository : UserRepository
     private readonly redisService  = redisService
+    private readonly tokenService : TokenService
     constructor(){
         this.userRepository= new UserRepository()
+        this.tokenService = new TokenService()
     }
     
     private verifyEmailOtp = async({ title   , subject=EmailEnum.confirmEmail ,  email }
@@ -96,11 +99,21 @@ export class AuthService {
 
 
 }
-    public login(data:LoginDTO):ILoginResponse {
-        const {email , password } = data
-        return  { email , password }
-
+    public  async login(inputs:LoginDTO , issuer: string): Promise<{ access_token: string; refresh_token: string }>{
+        const  { email , password } = inputs
+        const user = await this.userRepository.findOne({
+            filter:{email, confirmEmail:{$ne : null} , provider:ProviderEnum.SYSTEM  },
+            options:{lean:false}
+        })
+        if(!user){
+            throw new NotFoundException("Invalid Login Credentials ❌")
+        }
+        if(!await compareHash({plaintext:password , cipherText: user.password })){
+            throw new NotFoundException("Invalid Login Credentials ❌")
+        }
+        return this.tokenService.createLoginCredentials(user , issuer)
     }
+
     public async  signup (data:SignupDTO):Promise<IUser> {
         let {username , email , password , phone} = data
         const checkUserExist = await this.userRepository.findOne({filter:{email } , projection:"email" , options:{lean:true}}) 

@@ -68,11 +68,11 @@ type BaseKeyType ={
         return null;
     }
 };
-    baseRevokeTokenKey = (userId: Types.ObjectId|string): string => {
+    baseRevokeTokenKey = (userId:string): string => {
     return `RevokeToken::${userId}`;
 };
 
-    revokeTokenKey = ({ userId, jti }: { userId:  Types.ObjectId|string , jti: string }): string => {
+    revokeTokenKey = ({ userId, jti }: { userId: string , jti: string }): string => {
     return `${this.baseRevokeTokenKey(userId)}::${jti}`;
 };
 

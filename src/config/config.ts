@@ -17,17 +17,17 @@ if (!process.env['SECURITY_KEY']) {
   throw new Error("SECURITY_KEY is not defined in environment variables");
 }
 
-export const SECURITY_KEY = process.env['SECURITY_KEY'];
+export const SECURITY_KEY = process.env['SECURITY_KEY'] as string;
 
 
 
-export const System_TOKEN_SECURITY_KEY = process.env['System_TOKEN_SECURITY_KEY']
-export const User_TOKEN_SECURITY_KEY= process.env['User_TOKEN_SECURITY_KEY']
+export const System_TOKEN_SECURITY_KEY = process.env['System_TOKEN_SECURITY_KEY'] as string
+export const User_TOKEN_SECURITY_KEY= process.env['User_TOKEN_SECURITY_KEY'] as string
 
-export const System_REFRESH_TOKEN_SECURITY_KEY = process.env['System_REFRESH_TOKEN_SECURITY_KEY']
-export const User_REFRESH_TOKEN_SECURITY_KEY= process.env['User_REFRESH_TOKEN_SECURITY_KEY']
+export const System_REFRESH_TOKEN_SECURITY_KEY = process.env['System_REFRESH_TOKEN_SECURITY_KEY']  as string
+export const User_REFRESH_TOKEN_SECURITY_KEY= process.env['User_REFRESH_TOKEN_SECURITY_KEY']  as string
 
-export const ACCESS_EXPIRES_IN= parseInt(process.env['ACCESS_EXPIRES_IN'] as string )
+export const ACCESS_EXPIRES_IN= parseInt(process.env['ACCESS_EXPIRES_IN'] as string )  
 export const REFRESH_EXPIRES_IN= parseInt(process.env['REFRESH_EXPIRES_IN'] as string)
 
 
