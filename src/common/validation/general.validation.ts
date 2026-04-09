@@ -16,6 +16,8 @@ export const generalValidationFields = {
         phone:z.string().trim().max(11).regex(/^(002|02|\+2)?01[0-25]\d{8}$/),
         id: z.string().refine((value) => Types.ObjectId.isValid(value), {
             message: "Invalid ObjectId.",
-})
+        
+}),
+        idToken: z.string()   
 
 }

@@ -43,4 +43,34 @@ router.post('/signup' ,validation(validators.SignupSchema) , async(req:Request ,
         throw error
     }
 })
+
+// Signup with Google
+router.post('/signup/gmail', validation(validators.googleSignupSchema), async (req, res, next) => {
+  try {
+    const issuer = `${req.protocol}://${req.get('host') || 'localhost:3000'}`;
+    const { account, status } = await AuthService.signupWithGmail(
+    req.body.idToken,
+    issuer
+);
+    return successResponse({ res, status:status, data: { account } });
+  } catch (err) {
+    console.error("Signup Gmail Error:", err);
+  }
+});
+
+// Login with Google
+router.post('/login/gmail', validation(validators.googleLoginSchema), async (req, res, next) => {
+  try {
+    const issuer = `${req.protocol}://${req.get('host') || 'localhost:3000'}`;
+    const account = await AuthService.loginWithGmail(
+    req.body.idToken,
+      issuer
+    );
+    return successResponse({ res, data: { account } });
+  } catch (err) {
+    console.error("Login Gmail Error:", err) 
+  }
+});
+
+
 export default router

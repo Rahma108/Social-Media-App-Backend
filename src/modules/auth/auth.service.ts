@@ -9,6 +9,9 @@ import { UserRepository } from "../../DB/repository/user.repository";
 import { ConfirmEmailDTO, LoginDTO, SignupDTO } from "./auth.dto"
 import { redisService, } from "../../common/service";
 import { TokenService } from "../../common/service/token.service";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { CLIENT_ID } from "../../config/config";
+
 
 export class AuthService {
     // To reach any Repository ..
@@ -131,6 +134,80 @@ export class AuthService {
     })
         return user.toJSON()
     }
+
+    // With Google 
+    
+    private async  verifyGoogleAccount(idToken : string ) : Promise<TokenPayload>{
+            const client = new OAuth2Client();
+            const ticket = await client.verifyIdToken({
+                idToken,
+                audience: CLIENT_ID , 
+            });
+            const payload = ticket.getPayload();
+            console.log(payload);
+            if(!payload?.email_verified){
+            throw new  BadRequestException("Fail to verify authenticated this account with google 🫠")
+
+            }
+            return payload
+
+
+}
+
+    async loginWithGmail (idToken: string , issuer : string){
+    if (!idToken) {
+        throw new BadRequestException( "idToken is required" );
+    }
+    const payload = await this.verifyGoogleAccount(idToken)
+    const user = await this.userRepository.findOne( {filter:{ email:payload.email as string , provider:ProviderEnum.GOOGLE } } )
+    if(!user){
+        throw  new NotFoundException( "Invalid Login Credentials .")
+
+    }
+
+    return await this.tokenService.createLoginCredentials(user, issuer) 
+}
+
+    async signupWithGmail(idToken: string , issuer : string){
+        if (!idToken) {
+            throw new BadRequestException("idToken is required" );
+        }
+        const payload = await this.verifyGoogleAccount(idToken)
+        const checkUserExist = await this.userRepository.findOne( {filter:{ email:payload.email as string }} )
+        if(checkUserExist){
+            // 1- User Exists in Database  And Provider == System  ==> Throw Error ..
+            if(checkUserExist.provider == ProviderEnum.SYSTEM){
+            throw new ConflictException("Account Already Exist With Different Provider ‼️")
+
+        }
+            const token = await this.tokenService.createLoginCredentials(checkUserExist, issuer);
+            return { account: token, status: 200 };
+
+        }
+
+        //  3- User Not Exists ==> Create with Provider Google .
+        // New user → create + login
+        const newUser = await this.userRepository.create({
+            data: {
+            firstName: payload.given_name || '',
+            lastName: payload.family_name || '',
+            email: payload.email,
+            provider: ProviderEnum.GOOGLE,
+            profileImage: payload.picture,
+            confirmEmail: new Date(),
+            phone:""
+            }
+        });
+
+        const token = await this.tokenService.createLoginCredentials(newUser, issuer);
+        return { account: token , status: 201 };
+
+
+}
+
+
+
+
 }
 
 

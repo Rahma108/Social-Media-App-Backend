@@ -57,4 +57,15 @@ export const resetForgotPasswordSchema = {
     }),
 }
 
+export const googleSignupSchema = {
+    body: z.strictObject({
+        idToken:generalValidationFields.idToken
+    })
+}
 
+
+export const googleLoginSchema = {
+    body: z.strictObject({
+        idToken: generalValidationFields.idToken
+    })
+};

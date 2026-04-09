@@ -41,3 +41,5 @@ export const LINKEDIN_LINK=process.env['LINKEDIN_LINK'] as string
 export const GITHUB=process.env['GITHUB'] as string
 export const INSTAGRAM_LINK=process.env['INSTAGRAM_LINK'] as string
 
+export const CLIENT_ID = process.env['CLIENT_ID'] as string
+
