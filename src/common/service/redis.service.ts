@@ -1,7 +1,7 @@
 import { createClient, RedisClientType } from "redis";
 import { REDIS_URI } from "../../config/config";
 import { EmailEnum } from "../enums";
-import { Types } from "mongoose";
+
 
 type SetParams = {
     key: string;
