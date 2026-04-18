@@ -4,9 +4,9 @@ import { BadRequestException, ConflictException, NotFoundException } from "../..
 import { IUser } from "../../common/interfaces";
 import { emailEmitter, emailTemplate, sendEmail } from "../../common/utils/email";
 import { createNumberOtp } from "../../common/utils/otp";
-import { compareHash, encrypt, generateHash } from "../../common/utils/security";
+import { compareHash, generateHash } from "../../common/utils/security";
 import { UserRepository } from "../../DB/repository/user.repository";
-import { ConfirmEmailDTO, LoginDTO, SignupDTO } from "./auth.dto"
+import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDTO, SignupDTO, VerifyEmailOtpDTO } from "./auth.dto"
 import { redisService, } from "../../common/service";
 import { TokenService } from "../../common/service/token.service";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
@@ -88,7 +88,7 @@ export class AuthService {
     return ;
     }
 
-    public reSendConfirmEmail = async({email}:{email : string})=>{
+    public reSendConfirmEmail = async({email}: ResendConfirmEmailDTO)=>{
         const account = await this.userRepository.findOne({
         filter:{email , confirmEmail: { $eq: null } , Provider:ProviderEnum.SYSTEM }  ,
         projection:"email"
@@ -123,7 +123,7 @@ export class AuthService {
         if(checkUserExist){
                 throw new ConflictException("Email Exists ‼️‼️")
         }
-        const user =  await this.userRepository.create({data: {username , email , password: await generateHash({plaintext:password})  , phone:await encrypt(phone)} })
+        const user =  await this.userRepository.create({data: {username , email , password: password , phone:phone } })
         // const user = await this.userRepository.createOne({data: {username , email , password } })
         if(!user){
             throw new BadRequestException("Fail To Create User ✖️")
@@ -204,7 +204,51 @@ export class AuthService {
 
 
 }
+        // Forgot Password.
+        
+    async  requestForgotPasswordCode({email}:VerifyEmailOtpDTO){
+            const account = await this.userRepository.findOne({
+            projection :"email" ,
+            filter:{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM} 
+        })
+        if(!account){
+            throw new  NotFoundException("Fail to find Match account ❌")
+        }
+        emailEmitter.emit("sendEmail" ,async ()=>{
+                await this.verifyEmailOtp({title : "Forgot Password" , subject:EmailEnum.ForgotPassword , email })
+            })
+    return ;
+}
+async verifyForgotPasswordCode ({email , otp }:ConfirmEmailDTO ):Promise<void>{
+    const hashOtp = await redisService.get(redisService.otpKey({email , type:EmailEnum.ForgotPassword }))
+    if(!hashOtp){
+        throw  new NotFoundException("Expired OTP ❌")
+    }
+    if(!await compareHash({plaintext: otp , cipherText:hashOtp} )){
+        throw new ConflictException("Invalid OTP 😊")
+    }
+    return ;
+}
 
+    async  resetForgotPasswordCode({email , otp , password}:{email : string , otp : string , password: string } ){
+    await this.verifyForgotPasswordCode({email ,otp })
+    const account = await this.userRepository.findOneAndUpdate({
+        filter :{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM } ,
+        update:{
+            password:await generateHash({plaintext :password}),
+            changeCredentialTime:new Date() // All Logout
+        }
+
+    })
+    if(!account){
+        throw  new NotFoundException("Fail to find Match account ❌")
+    }
+    Promise.allSettled([
+            await redisService.deleteKeys(await redisService.keys((redisService.otpKey({email , type:EmailEnum.ForgotPassword })))),
+            await redisService.deleteKeys(await redisService.keys(redisService.baseRevokeTokenKey(account._id.toString())))
+    ])
+    return ;
+}
 
 
 

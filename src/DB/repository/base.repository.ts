@@ -1,5 +1,5 @@
 
-import {MongooseUpdateQueryOptions ,UpdateQuery, AnyKeys, CreateOptions, FlattenMaps, HydratedDocument, Model, PopulateOptions, ProjectionType, QueryFilter, QueryOptions, Types, UpdateWithAggregationPipeline, UpdateResult, UpdateWriteOpResult, DeleteResult } from "mongoose";
+import {MongooseUpdateQueryOptions ,UpdateQuery, AnyKeys, CreateOptions, FlattenMaps, HydratedDocument, Model, PopulateOptions, ProjectionType, QueryFilter, QueryOptions, Types, UpdateWithAggregationPipeline,UpdateWriteOpResult, DeleteResult } from "mongoose";
 
 export abstract  class BaseRepository<TRawDocument> {
 
@@ -101,75 +101,66 @@ export abstract  class BaseRepository<TRawDocument> {
         if(options?.populate) doc.populate(options.populate as PopulateOptions[])
         return await doc.exec()
 }
-    async find({ model, select, filter, options }: any) {
-        let doc = model.find(filter || {}).select(select || "");
+    async find({
+        filter , projection, options }: {filter?:QueryFilter<TRawDocument>
+            , projection?:ProjectionType<TRawDocument>| null | undefined,
+            options?:QueryOptions<TRawDocument>| null | undefined } ) {
+            const doc = this.model.find(filter ,projection );
 
         if (options?.populate) {
-        doc = doc.populate(options.populate);
-        }
-
-        if (options?.skip) {
-        doc = doc.skip(options.skip);
-        }
-
-        if (options?.limit) {
-        doc = doc.limit(options.limit);
+            doc.populate(options.populate as  PopulateOptions[] ) ;
         }
 
         if (options?.lean) {
-        doc = doc.lean();
+            doc.lean(options.lean);
         }
-
         return doc.exec();
     }
 
-    async paginate({
-        filter = {},
-        options = {},
-        select,
-        page = "all",
-        size = 5,
-        model,
-    }: any) {
-        let docsCount;
-        let pages;
+    // async paginate({
+    //     filter = {},
+    //     options = {},
+    //     select,
+    //     page = "all",
+    //     size = 5,
+    //     model,
+    // }: any) {
+    //     let docsCount;
+    //     let pages;
 
-        if (page !== "all") {
-        const currentPage = Math.max(1, Number(page));
-        const limit = Math.max(1, Number(size) || 5);
+    //     if (page !== "all") {
+    //     const currentPage = Math.max(1, Number(page));
+    //     const limit = Math.max(1, Number(size) || 5);
 
-        options.limit = limit;
-        options.skip = (currentPage - 1) * limit;
+    //     options.limit = limit;
+    //     options.skip = (currentPage - 1) * limit;
 
-        docsCount = await model.countDocuments(filter);
-        pages = Math.ceil(docsCount / limit);
+    //     docsCount = await model.countDocuments(filter);
+    //     pages = Math.ceil(docsCount / limit);
 
-        page = currentPage;
-        }
+    //     page = currentPage;
+    //     }
 
-        const result = await this.find({ model, select, filter, options });
+    //     const result = await this.find({ model, select, filter, options });
 
-        return {
-        docsCount,
-        limit: options.limit,
-        pages,
-        currentPage: page !== "all" ? page : undefined,
-        result,
-        };
-    }
-    insertMany = async ({
+    //     return {
+    //     docsCount,
+    //     limit: options.limit,
+    //     pages,
+    //     currentPage: page !== "all" ? page : undefined,
+    //     result,
+    //     };
+    // }
+    async insertMany ({
         data,
-        model,
         }: {
-        data: any[];
-        model: Model<any>;
-        }) => {
-        return await model.insertMany(data);
-        };
-
+        data: AnyKeys<TRawDocument>[];
+        }): Promise<HydratedDocument<TRawDocument>[] > {
+        return await this.model.insertMany(data as  any ) as HydratedDocument<TRawDocument>[]
+    }
     async updateOne({
         filter = {},
-        update,
+        update ,
         options
     } :{
         filter: QueryFilter<TRawDocument>,
@@ -177,7 +168,7 @@ export abstract  class BaseRepository<TRawDocument> {
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<UpdateWriteOpResult>{
-        return await this.model.updateOne(filter , update , options )
+        return await this.model.updateOne(filter ,{...update , $incr:{_v: 1}} , options )
     }
 
     async updateMany({
@@ -190,7 +181,7 @@ export abstract  class BaseRepository<TRawDocument> {
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<UpdateWriteOpResult>{
-        return await this.model.updateMany(filter , update , options )
+        return await this.model.updateMany(filter , {...update , $incr:{_v: 1}} , options )
     }
 
     async deleteOne({
@@ -221,7 +212,7 @@ export abstract  class BaseRepository<TRawDocument> {
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<HydratedDocument<TRawDocument> | null >{
-        return await this.model.findOneAndUpdate(filter , update , options )
+        return await this.model.findOneAndUpdate(filter , {...update , $incr:{_v: 1}} , options )
     }
 
     async findByAndUpdate({
@@ -234,7 +225,7 @@ export abstract  class BaseRepository<TRawDocument> {
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<HydratedDocument<TRawDocument> | null >{
-        return await this.model.findByIdAndUpdate(_id , update , options )
+        return await this.model.findByIdAndUpdate(_id , {...update , $incr:{_v: 1}}  , options )
     }
 
     async findOneAndDelete({

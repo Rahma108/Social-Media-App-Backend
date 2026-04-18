@@ -10,6 +10,7 @@ export interface IUser {
     email: string ,
     password: string ,
     bio?: string ,
+    slug:string ,
     DOB?: Date ,
     confirmedAt? : Date ,
     gender? : GenderEnum,
@@ -22,5 +23,10 @@ export interface IUser {
     _id: Types.ObjectId;
     changeCredentialTime?:Date ,
     confirmEmail?: Date ,
-    provider?:Number
+    provider?:Number ,
+    extra : {
+        name : String
+    } ,
+    deletedAt?: Date ,
+    restoredAt?:Date
 }

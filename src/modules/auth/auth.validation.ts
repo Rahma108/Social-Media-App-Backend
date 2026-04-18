@@ -48,7 +48,7 @@ export const verifyForgotPasswordSchema = {
 })
 }
 export const resetForgotPasswordSchema = {
-    body: verifyForgotPasswordSchema.body.extend({
+    body: confirmEmailSchema.body.extend({
     password: generalValidationFields.password,
     confirmPassword: generalValidationFields.confirmPassword,
     }).refine((data) => data.password === data.confirmPassword, {
