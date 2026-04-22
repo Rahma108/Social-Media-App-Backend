@@ -6,11 +6,13 @@ import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
 import { PORT } from './config/config'
-import { UserRepository } from './DB/repository';
-import { GenderEnum } from './common/enums';
-import { Types } from 'mongoose';
-// import { GenderEnum, ProviderEnum } from './common/enums';
+import { s3Service } from './common/service';
+import {pipeline} from 'node:stream'
+import { promisify } from 'node:util';
+import { successResponse } from './common/response';
 
+
+const s3WriteStream = promisify(pipeline)
 export const bootstrap=async ()=>{
     const app:express.Express = express()
     // Global Middleware 
@@ -24,74 +26,45 @@ export const bootstrap=async ()=>{
     app.use("/auth" , authRouter)
     app.use('/user', userRouter)
 
-    // Invalid Routing 
-    app.use('/*dummy' ,  (req:Request , res:Response , next:NextFunction)=>{  
-        res.status(40).json({Message  : "Not Found "})
 
-    })
     // Global Error Handling 
     app.use(globalErrorHandler);
     
     await connectDB()
     await redisService.connectRedis()
-
-    try {
-        // const user = new UserModel({
-        // username : "Rahma Salama" ,
-        // password : "7tfghvcjc",
-        // email : `${Date.now()}@gmail.com` ,
-        // phone :"01045333733" ,
-        // provider: ProviderEnum.SYSTEM , 
-        // extra:{
-        //     name : "lolo lolo "
-        // } }  
-        // )
-        // user.save({validateBeforeSave : true }) 
-        // const userRepository = new UserRepository()
-        // const user = await userRepository.insertMany(
-        //     {data:
-        //     [ {
-        //         username : "errr errrr" , 
-        //         email : `${Date.now()}@gmail.com`  ,
-        //         phone :"01045333733" ,
-        //         password : "7tfghvcjc" }
-        //     ]}) 
-
-        const userRepository = new UserRepository()
-        // const user = await userRepository.find({filter:
-        //     {gender: GenderEnum.MALE  ,
-        //         paranoid : false  ,
-        //         deletedAt:{$exists:true }
-        //     }})
-        // const user = await userRepository.updateOne({
-        //     filter:{
-        //         _id:Types.ObjectId.createFromHexString('69df02a9eafd63d72821f2dc') ,
-        //         paranoid : false
-        //     },
-        //     update:{
-        //         gender:GenderEnum.MALE ,
-        //         restoredAt:new Date()
-        //     }
-        
-        //     })
-
-
-
-
-
-        const user = await userRepository.deleteOne({
-            filter:{
-                _id:Types.ObjectId.createFromHexString('69df02a9eafd63d72821f2dc') ,
-                // paranoid : false
-                force : true 
-            }
-        
-            })
-        console.log(user)
-
-    } catch (error) {
-        console.log(error)
+    app.get("/uploads/*path" , async (req:Request , res:Response , next:NextFunction)=>{  
+        const {download , fileName } = req.query as {download : string , fileName : string }
+        const {path} = req.params as {path : string [] }
+        const key = path.join("/");
+        const { Body, ContentType } = await s3Service.getAsset({
+            Key: key
+        });
+        res.setHeader(
+        "Content-Type",
+        ContentType || "application/octet-stream"
+    );
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    if(download === "true"){
+        res.setHeader("Content-Disposition", `attachment; filename="${ fileName || key.split("/").pop()}"`); // only apply it for  download
     }
+        return await s3WriteStream(Body as NodeJS.ReadableStream , res  ) // read - write .
+        // return successResponse({res , data:{params : req.params ,  key , data:{Body , ContentType } } , status:200 })
+
+    })
+
+    app.get("/pre-signed/*path" , async (req:Request , res:Response , next:NextFunction)=>{ 
+        const {download , fileName } = req.query as {download : string , fileName : string } 
+        const {path} = req.params as {path : string [] }
+        const Key = path.join("/");
+        const url = await s3Service.createPreSignedFetchLink({Key , download , fileName })
+        return successResponse({res , data:{url}})
+    
+    })
+    // Invalid Routing 
+    app.use('/*dummy' ,  (req:Request , res:Response , next:NextFunction)=>{  
+        res.status(400).json({Message  : "Not Found "})
+
+    })
     app.listen(PORT, ()=>{
         console.log(`Server is running on port 3000 🚀`);
         

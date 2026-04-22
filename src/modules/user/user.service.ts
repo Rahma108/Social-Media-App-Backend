@@ -5,14 +5,17 @@ import { decrypt } from '../../common/utils/security';
 import { ACCESS_EXPIRES_IN, REFRESH_EXPIRES_IN } from '../../config/config';
 import { ConflictException } from '../../common/exception';
 import { TokenService } from '../../common/service/token.service';
-import { redisService } from '../../common/service';
+import { redisService, S3Service } from '../../common/service';
 import { LogoutEnum } from '../../common/enums/security.enum';
+import { StorageApproachEnum, UploadApproachEnum } from '../../common/enums';
 
 export class UserService {
     private readonly tokenService : TokenService
+    private readonly s3Service: S3Service
     
         constructor(){
             this.tokenService = new TokenService()
+            this.s3Service = new S3Service()
         }
         async profile( user: IUser | HydratedDocument<IUser>){
             if (user) {
@@ -55,6 +58,61 @@ export class UserService {
         }
     return status
 
+}
+    async profileImage(file: Express.Multer.File, user: HydratedDocument<IUser>) {
+
+    // user.profileImage = await this.s3Service.uploadAsset({
+    //     file,
+    //     path: `Users/${user._id.toString()}/profile`,
+    //     storageApproach:StorageApproachEnum.DISK
+    // });
+    const {Key}= await this.s3Service.uploadLargeAsset({
+        file,
+        path: `Users/${user._id.toString()}/profile`,
+        storageApproach:StorageApproachEnum.DISK
+    });
+    user.profileImage = Key as string
+    await user.save();
+    return user.toJSON();
+}
+
+    async profileImageWithPreSignedLink({ContentType , Originalname } :{ContentType:string , Originalname:string }, user: HydratedDocument<IUser>):Promise<{user : IUser , url : string }>  {
+        const oldPic = user.profileImage
+    
+        const { url , Key }= await this.s3Service.createPreSignedUploadLink({
+        path: `Users/${user._id.toString()}/profile`,
+        ContentType,
+        Originalname
+    });
+    user.profileImage = Key as string
+    await user.save();
+    if(oldPic){
+        await this.s3Service.deleteAsset({
+            Key:oldPic 
+        })
+    }
+    return  {user , url }
+}
+
+    async profileCoverImages(files: Express.Multer.File[] , user: HydratedDocument<IUser>){
+        const oldUrls = user.coverImages
+            const urls = await this.s3Service.uploadAssets({
+                files,
+                path: `Users/${user._id.toString()}/profile/covers`,
+                storageApproach:StorageApproachEnum.DISK ,
+                uploadApproach : UploadApproachEnum.LARGE
+            });
+            user.coverImages = urls as string[]
+            await user.save();
+
+            if(oldUrls?.length){
+                await this.s3Service.deleteAssets({
+                    Keys:oldUrls.map(ele => {return {Key : ele } } )
+
+                })
+
+            }
+            return user.toJSON();
 }
     }
 export default new UserService()

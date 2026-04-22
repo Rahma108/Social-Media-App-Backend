@@ -2,6 +2,8 @@
 import { HydratedDocument, model, models  , Schema }  from "mongoose";
 import { GenderEnum, ProviderEnum, RoleEnum } from "../../common/enums";
 import { IUser } from "../../common/interfaces";
+import { BadRequestException } from "../../common/exception";
+import { encrypt, generateHash } from "../../common/utils/security";
 // import { encrypt, generateHash } from "../../common/utils/security";
 // import { sendEmail } from "../../common/utils/email";
 const userSchema = new Schema<IUser>({
@@ -62,71 +64,22 @@ userSchema.virtual('username').get(function(this:IUser){
 
 })
 
-// userSchema.pre("validate" , function(){ 
-//         console.log("Pre Validate"  ) 
-//         if( this.password && this.provider == ProviderEnum.GOOGLE ){
-//             throw new BadRequestException("Google Account Cannot hold password ❌")
+userSchema.pre("validate" ,async function(){ 
+        console.log("Pre Validate"  ) 
+        if( this.password && this.provider == ProviderEnum.GOOGLE ){
+            throw new BadRequestException("Google Account Cannot hold password ❌")
 
-//         }
+        }
+        if(this.phone && this.isModified("phone")){
+            this.phone = await encrypt(this.phone);
+        }
+        if(this.password && this.isModified("password")){
+            this.password = await generateHash({plaintext :this.password });
+        }
 
-// })
-// userSchema.pre("save" , async function(this : HydratedDocument<IUser> & {wasNew : boolean}  ){
-        
-//         this.wasNew = this.isNew 
-//         console.log("Pre One" , this ) ; 
-//         // console.log(this.isDirectModified("name"))  // false 
-//         // console.log(this.isDirectModified("extra.name")) // false 
-//         // console.log(this.isDirectModified("extra")) // true 
-//         // console.log(this.directModifiedPaths()) ;
-//         console.log(this.isNew)  // false 
-//         console.log(this.isSelected("extra")) ; // true 
-
-//         if(this.isModified("password")){
-//             this.password = await generateHash({plaintext : this.password}) ;
-//         }
-//         if(this.phone && this.isModified("phone")){
-//             this.phone = await encrypt(this.phone);
-//         }
-// })
-// userSchema.post("save" , async function(){
-//     console.log("Post One" , this)
-//         const that = this as HydratedDocument<IUser> & {wasNew : boolean} 
-//         console.log({post : that.wasNew})
-//         if(that.wasNew){
-//             await sendEmail({to : this.email  , subject:"confirmEmail" , html:"hello"})
-//         }
-// })
-// userSchema.post("save" , async function(doc , next){
-//         console.log("Post One" ) 
-//         // next()
-// })
-
-// userSchema.post("validate" , function(){ // First Run .
-//         console.log("Post Validate"  ) 
-//         if(!this.slug || this.slug.includes(" ")){
-//             throw new BadRequestException("Invalid Slug Format ❌")
-//         }
-
-// })
-// updateOne , deleteOne == consider Query ----> document: true to be document
-// userSchema.pre("updateOne" , { document: true } , async function(){
-//     console.log(this)
-
-
-// })
-
-// userSchema.pre("insertMany", async function(doc){
-//     console.log(this , doc)
-// })
-
-// userSchema.post("insertMany", async function(doc , next){
-//     console.log(this , doc)
-// })
+})
 
 userSchema.pre(["findOne" , "find"], async function(){
-    // console.log(this );
-    // console.log(this.getFilter())
-    // console.log(this.getQuery())
     const query = this.getQuery()
     if(query['paranoid']  === false ){
         this.setQuery({...query})

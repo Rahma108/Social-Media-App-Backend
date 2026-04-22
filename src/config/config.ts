@@ -43,3 +43,10 @@ export const INSTAGRAM_LINK=process.env['INSTAGRAM_LINK'] as string
 
 export const CLIENT_ID = process.env['CLIENT_ID'] as string
 
+
+
+export const AWS_REGIONS = process.env['AWS_REGIONS'] as string
+export const AWS_BUCKET_NAME= process.env['AWS_BUCKET_NAME'] as string
+export const AWS_ACCESS_KEY_ID = process.env['AWS_ACCESS_KEY_ID'] as string
+export const AWS_SECRET_ACCESS_KEY = process.env['AWS_SECRET_ACCESS_KEY'] as string
+export const AWS_EXPIRES_IN = parseInt(process.env['AWS_EXPIRES_IN'] as string || "120")
