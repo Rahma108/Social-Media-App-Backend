@@ -55,7 +55,10 @@ router.patch('/profile-cover-images' ,authentication(TokenTypeEnum.access) , aut
     return successResponse({res , data})
 })
 
-
+router.delete('/profile', authentication() ,  async(req:Request , res:Response , next:NextFunction)=>{
+    const data = await userService.deleteProfile( req.user)
+    return successResponse({res  , data  })
+})
 export default router 
 
 

@@ -1,6 +1,6 @@
 
 import { StorageApproachEnum, UploadApproachEnum } from './../enums/multer.enum';
-import { CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectCommandOutput, DeleteObjectsCommand, DeleteObjectsCommandOutput, GetObjectCommand, GetObjectCommandOutput, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectCommandOutput, DeleteObjectsCommand, DeleteObjectsCommandOutput, GetObjectCommand, GetObjectCommandOutput, ListObjectsV2Command, ListObjectsV2CommandOutput, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { APPLICATION_NAME, AWS_ACCESS_KEY_ID, AWS_BUCKET_NAME, AWS_EXPIRES_IN, AWS_REGIONS, AWS_SECRET_ACCESS_KEY } from "../../config/config";
 import { randomUUID } from "node:crypto";
 import { BadRequestException } from "../exception";
@@ -234,7 +234,7 @@ export class S3Service {
     }
 
 
-      async deleteAssets({
+    async deleteAssets({
         Bucket = AWS_BUCKET_NAME ,
         Keys
     }:{
@@ -250,6 +250,36 @@ export class S3Service {
                 
             })
             return await this.client.send(command)
+
+    }
+
+
+    async listFolderDir({
+        Bucket = AWS_BUCKET_NAME ,
+        prefix 
+    }:{
+        Bucket?:string  ,
+        prefix : string 
+    }):Promise<ListObjectsV2CommandOutput>{
+            const command =  new ListObjectsV2Command({
+                Bucket ,
+                Prefix:`${APPLICATION_NAME}/${prefix}`
+                
+            })
+            return await this.client.send(command)
+
+    }
+
+    async deleteFolderByPrefix({
+        Bucket = AWS_BUCKET_NAME ,
+        prefix 
+    }:{
+        Bucket?:string  ,
+        prefix : string 
+    }):Promise<DeleteObjectCommandOutput>{
+            const result = await this.listFolderDir({ Bucket , prefix })
+            const Keys = result.Contents?.map(ele => { return { Key :ele.Key} }) as {Key : string }[] 
+            return await this.deleteAssets({ Bucket , Keys })
 
     }
 
