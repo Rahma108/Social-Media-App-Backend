@@ -19,6 +19,14 @@ export const validation = ( schema :validationSchemaType )=>{
         const validationErrors : validationErrorType = [] 
         for (const  key of Object.keys(schema) as KeyRequestType[]  ) {
             if(!schema[key]) continue;
+
+            if(req.file){
+                req.body = {...req.body ,file: req.file}
+            }
+
+            if(req.files){
+                req.body = {...req.body ,files : req.files}
+            }
             const validationResult = schema[key].safeParse(req[key])
             if(!validationResult.success){
                 const error = validationResult.error  as ZodError

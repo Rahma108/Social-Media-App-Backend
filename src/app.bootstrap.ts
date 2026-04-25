@@ -10,6 +10,7 @@ import { notificationService, s3Service } from './common/service';
 import {pipeline} from 'node:stream'
 import { promisify } from 'node:util';
 import { successResponse } from './common/response';
+import { postRouter } from './modules/index'
 
 
 const s3WriteStream = promisify(pipeline)
@@ -31,10 +32,10 @@ export const bootstrap=async ()=>{
     // app routing ...
     app.use("/auth" , authRouter)
     app.use('/user', userRouter)
+    app.use('/post', postRouter)
 
     // Global Error Handling 
     app.use(globalErrorHandler);
-    
     await connectDB()
     await redisService.connectRedis()
     app.get("/uploads/*path" , async (req:Request , res:Response , next:NextFunction)=>{  

@@ -45,11 +45,6 @@ export class NotificationService {
             body: string ;
         }
     }){
-    // const message = {
-    //     token,
-    //     data
-    // };
-
     await Promise.allSettled(
         tokens.map(token =>{ return this.sendNotification({token , data })  } )
 
