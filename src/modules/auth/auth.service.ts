@@ -7,7 +7,7 @@ import { createNumberOtp } from "../../common/utils/otp";
 import { compareHash, generateHash } from "../../common/utils/security";
 import { UserRepository } from "../../DB/repository/user.repository";
 import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDTO, SignupDTO, VerifyEmailOtpDTO } from "./auth.dto"
-import { redisService, } from "../../common/service";
+import { notificationService,  redisService, } from "../../common/service";
 import { TokenService } from "../../common/service/token.service";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { CLIENT_ID } from "../../config/config";
@@ -103,7 +103,7 @@ export class AuthService {
 
 }
     public  async login(inputs:LoginDTO , issuer: string): Promise<{ access_token: string; refresh_token: string }>{
-        const  { email , password } = inputs
+        const  { email , password  , FCM } = inputs
         const user = await this.userRepository.findOne({
             filter:{email, confirmEmail:{$ne : null} , provider:ProviderEnum.SYSTEM  },
             options:{lean:false}
@@ -113,6 +113,18 @@ export class AuthService {
         }
         if(!await compareHash({plaintext:password , cipherText: user.password })){
             throw new NotFoundException("Invalid Login Credentials ❌")
+        }
+
+        // store fcm in redis .
+        if(FCM){
+            await redisService.addFCM(user._id , FCM )
+            await notificationService.sendMultipleNotification({
+                tokens: await this.redisService.getFCMs(user._id) ,
+                data:{
+                    title:"Login Attempts",
+                    body:"New Login Session"
+                }
+            })
         }
         return this.tokenService.createLoginCredentials(user , issuer)
     }

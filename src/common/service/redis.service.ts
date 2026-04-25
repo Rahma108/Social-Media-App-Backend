@@ -1,6 +1,7 @@
 import { createClient, RedisClientType } from "redis";
 import { REDIS_URI } from "../../config/config";
 import { EmailEnum } from "../enums";
+import { Types } from "mongoose";
 
 
 type SetParams = {
@@ -39,7 +40,6 @@ type BaseKeyType ={
             this.client.on("reconnecting", () => {
             console.log("Redis reconnecting 🔄");
             });
-      
     }
 
 
@@ -177,6 +177,30 @@ type BaseKeyType ={
         return 0;
     }
 };
+
+   // Firebase 
+    FCMKey(userId : string | Types.ObjectId ) {
+        return `user:FCM:${userId}`;
+    }
+    async addFCM(userId : string | Types.ObjectId, FCMToken : string) {
+        return await this.client.sAdd(this.FCMKey(userId), FCMToken);
+    }
+
+    async  removeFCM(userId : string | Types.ObjectId, FCMToken: string) {
+        return await this.client.sRem(this.FCMKey(userId), FCMToken);
+    }
+
+    async getFCMs(userId : string | Types.ObjectId) {
+        return await this.client.sMembers(this.FCMKey(userId));
+    }
+
+    async hasFCMs(userId : string | Types.ObjectId) {
+        return await this.client.sCard(this.FCMKey(userId));
+    }
+
+    async removeFCMUser(userId : string | Types.ObjectId) {
+        return await this.client.del(this.FCMKey(userId));
+}
 
 }
 

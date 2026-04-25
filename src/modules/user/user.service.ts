@@ -13,7 +13,7 @@ import { UserRepository } from '../../DB/repository';
 export class UserService {
     private readonly tokenService : TokenService
     private readonly s3Service: S3Service
-     private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository
     
         constructor(){
             this.tokenService = new TokenService()
@@ -82,7 +82,7 @@ export class UserService {
     async profileImageWithPreSignedLink({ContentType , Originalname } :{ContentType:string , Originalname:string }, user: HydratedDocument<IUser>):Promise<{user : IUser , url : string }>  {
         // const oldPic = user.profileImage
     
-        const { url , Key }= await this.s3Service.createPreSignedUploadLink({
+        const { url }= await this.s3Service.createPreSignedUploadLink({
         path: `Users/${user._id.toString()}/profile`,
         ContentType,
         Originalname
@@ -95,7 +95,7 @@ export class UserService {
     //         Key:oldPic 
     //     })
     // }
-    return  {user , url }
+    return  {user , url  }
 }
 
     async profileCoverImages(files: Express.Multer.File[] , user: HydratedDocument<IUser>){

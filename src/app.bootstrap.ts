@@ -6,7 +6,7 @@ import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
 import { PORT } from './config/config'
-import { s3Service } from './common/service';
+import { notificationService, s3Service } from './common/service';
 import {pipeline} from 'node:stream'
 import { promisify } from 'node:util';
 import { successResponse } from './common/response';
@@ -22,10 +22,15 @@ export const bootstrap=async ()=>{
         res.send("Hello World 🤩")
 
     })
+    app.post('/send-notification' ,   async(req:Request , res:Response , next:NextFunction):Promise<express.Response>=>{  
+        console.log(req.body.token)
+        await notificationService.sendNotification({token:req.body.token as string  , 
+            data:{body : "بسم الله الرحمن الرحيم ", title : "First Notification"}})
+        return successResponse({res })
+    })
     // app routing ...
     app.use("/auth" , authRouter)
     app.use('/user', userRouter)
-
 
     // Global Error Handling 
     app.use(globalErrorHandler);
