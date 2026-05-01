@@ -27,6 +27,7 @@ export interface IUser {
     extra : {
         name : String
     } ,
+    friends?:Types.ObjectId[] |  IUser[],
     deletedAt?: Date ,
     restoredAt?:Date
 }

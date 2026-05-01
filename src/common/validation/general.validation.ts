@@ -18,6 +18,37 @@ export const generalValidationFields = {
             message: "Invalid ObjectId.",
         
 }),
-        idToken: z.string()   
+        idToken: z.string()  ,
+        file:function(mimetype: string[]){
+        return z.strictObject(
+                {
+                fieldname: z.string(),
+                originalname: z.string(),
+                encoding:z.string(),
+                mimetype:  z.enum(mimetype),
+                buffer:z.any().optional(),   
+                path: z.string().optional(),
+                size: z.number()
+                }
+        ).superRefine((args, ctx )=>{
+            if(!args.path && !args.buffer){
+                ctx.addIssue({
+                    code:"custom" ,
+                    message:"Buffer id Required ❌" ,
+                    path :['buffer']
+                })
+            }
+
+
+        })
+
+    } 
 
 }
+export const paginationValidationSchema = {
+    query : z.strictObject({
+        page : z.coerce.number().optional(),
+        size : z.coerce.number().optional(),
+        search : z.string().optional()
+    })
+} 

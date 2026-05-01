@@ -12,7 +12,6 @@ import { promisify } from 'node:util';
 import { successResponse } from './common/response';
 import { postRouter } from './modules/index'
 
-
 const s3WriteStream = promisify(pipeline)
 export const bootstrap=async ()=>{
     const app:express.Express = express()
@@ -33,7 +32,6 @@ export const bootstrap=async ()=>{
     app.use("/auth" , authRouter)
     app.use('/user', userRouter)
     app.use('/post', postRouter)
-
     // Global Error Handling 
     app.use(globalErrorHandler);
     await connectDB()

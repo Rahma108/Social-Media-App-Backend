@@ -43,6 +43,8 @@ export class NotificationService {
         data:{
             title : string ;
             body: string ;
+            postId?: string;
+            commentId?: string;
         }
     }){
     await Promise.allSettled(

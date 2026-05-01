@@ -1,12 +1,8 @@
 
 import {  HydratedDocument, model, models  , Schema, Types }  from "mongoose";
-import { IPost, IUser } from "../../common/interfaces";
-import { AvailabilityEnum } from "../../common/enums";
+import { IComment,  IUser } from "../../common/interfaces";
 
-
-const postSchema = new Schema<IPost>({
-
-    folderId: {type : String , required: true } ,
+const commentSchema = new Schema<IComment>({
     content: {type : String , required: function(this){
         return this.attachments?.length
 
@@ -16,7 +12,9 @@ const postSchema = new Schema<IPost>({
     tags : [{type : Types.ObjectId , ref : "User"  }],
     likes : [{type : Types.ObjectId , ref : "User"  }],
 
-    availability: {type : Number , enum: AvailabilityEnum , default : AvailabilityEnum.PUBLIC },
+    commentId: {type : Types.ObjectId , ref : "Comment"  },
+    postId: {type : Types.ObjectId , ref : "Post" , required: true  },
+
     createdBy : {type : Types.ObjectId , ref : "User" , required: true  },
     updatedBy : {type : Types.ObjectId , ref : "User"  },
 
@@ -25,7 +23,7 @@ const postSchema = new Schema<IPost>({
 
 } , {
     timestamps:true ,
-    collection:"Posts" ,
+    collection:"Comments" ,
     strict:true ,
     strictQuery:true , 
     toJSON:{virtuals:true} ,
@@ -33,16 +31,13 @@ const postSchema = new Schema<IPost>({
 
 } )
 
-postSchema.virtual("comments" , {
-    localField:"_id" ,
-    foreignField:"postId",
-    ref:"Comment",
-    justOne: false 
-
-
+commentSchema.virtual("reply", {
+    localField: "commentId",   
+    foreignField: "_id",     
+    ref: "Comment",
+    justOne: true
 })
-
-postSchema.pre(["findOne" , "find" , "countDocuments"], async function(){
+commentSchema.pre(["findOne" , "find" , "countDocuments"], async function(){
     const query = this.getQuery()
     if(query['paranoid']  === false ){
         this.setQuery({...query})
@@ -52,7 +47,7 @@ postSchema.pre(["findOne" , "find" , "countDocuments"], async function(){
     
 })
 
-postSchema.pre( ["updateOne" , "findOneAndUpdate"], async function(){
+commentSchema.pre( ["updateOne" , "findOneAndUpdate"], async function(){
     const update = this.getUpdate() as HydratedDocument<IUser>
     if(update.deletedAt){
         this.setUpdate({...update , $unset:{restoredAt :  1 }})
@@ -71,7 +66,7 @@ postSchema.pre( ["updateOne" , "findOneAndUpdate"], async function(){
     
 })
 
-postSchema.pre( ["deleteOne" , "findOneAndDelete"], async function(){
+commentSchema.pre( ["deleteOne" , "findOneAndDelete"], async function(){
     
     const query = this.getQuery()
     if(query['force']  === true  ){
@@ -83,4 +78,4 @@ postSchema.pre( ["deleteOne" , "findOneAndDelete"], async function(){
 })
 
 
-export const  PostModel = models['Post'] || model<IPost>("Post", postSchema);
+export const  CommentModel = models['Comment'] || model<IComment>("Comment", commentSchema);

@@ -1,11 +1,10 @@
 
-import { HydratedDocument, model, models  , Schema }  from "mongoose";
+import { HydratedDocument, model, models  , Schema, Types }  from "mongoose";
 import { GenderEnum, ProviderEnum, RoleEnum } from "../../common/enums";
 import { IUser } from "../../common/interfaces";
 import { BadRequestException } from "../../common/exception";
 import { encrypt, generateHash } from "../../common/utils/security";
-// import { encrypt, generateHash } from "../../common/utils/security";
-// import { sendEmail } from "../../common/utils/email";
+
 const userSchema = new Schema<IUser>({
 
     firstName : {type : String , required: true } ,
@@ -23,7 +22,7 @@ const userSchema = new Schema<IUser>({
         enum: Object.values(GenderEnum).filter(v => typeof v === "number"),
         default: GenderEnum.MALE
         },
-
+        friends:[{type : Types.ObjectId , ref :"User"}],
         role : { 
         type: Number,  
         enum: Object.values(RoleEnum).filter(v => typeof v === "number"),
@@ -39,6 +38,7 @@ const userSchema = new Schema<IUser>({
     extra : {
         name : String
     } ,
+
     deletedAt: {type:Date } ,
     restoredAt: {type:Date }
 
