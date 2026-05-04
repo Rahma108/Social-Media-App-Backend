@@ -1,11 +1,12 @@
 import { HydratedDocument,  Types } from "mongoose";
 import { createCommentBodyDTO, createCommentParamsDTO, createReplyOnParamsDTO} from "./comment.dto";
 import { IComment, IPost, IUser } from "../../common/interfaces";
-import {  notificationService, redisService, S3Service } from "../../common/service";
+import {  redisService, S3Service } from "../../common/service";
 import { PostRepository, UserRepository } from "../../DB/repository";
 import { BadRequestException, NotFoundException } from "../../common/exception";
 import { CommentRepository } from "../../DB/repository/comment.repository";
 import { getAvailability } from "../../common/utils/post";
+import { notificationService } from "../notification/notification.service";
 
 class CommentService {
     private readonly s3Service: S3Service

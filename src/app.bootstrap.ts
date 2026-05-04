@@ -1,16 +1,17 @@
 import { redisService } from './common/service/redis.service';
 import express from 'express'
 import type { Request , Response , NextFunction } from 'express'
-import { authRouter, userRouter } from './modules'
+import { authRouter, notificationRouter, userRouter } from './modules'
 import cors from 'cors'
 import { globalErrorHandler } from './middleware'
 import { connectDB } from './DB/connection.db'
 import { PORT } from './config/config'
-import { notificationService, s3Service } from './common/service';
+import { s3Service } from './common/service';
 import {pipeline} from 'node:stream'
 import { promisify } from 'node:util';
 import { successResponse } from './common/response';
 import { postRouter } from './modules/index'
+import { notificationService } from './modules/notification/notification.service';
 
 const s3WriteStream = promisify(pipeline)
 export const bootstrap=async ()=>{
@@ -32,6 +33,7 @@ export const bootstrap=async ()=>{
     app.use("/auth" , authRouter)
     app.use('/user', userRouter)
     app.use('/post', postRouter)
+    app.use('/notification', notificationRouter)
     // Global Error Handling 
     app.use(globalErrorHandler);
     await connectDB()

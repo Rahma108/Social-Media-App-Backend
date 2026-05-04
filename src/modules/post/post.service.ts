@@ -1,13 +1,14 @@
 import { HydratedDocument,  Types } from "mongoose";
 import { createPostBodyDTO, UpdatePostBodyDTO, UpdatePostParamsDTO } from "./post.dto";
 import { IPost, IUser } from "../../common/interfaces";
-import {  notificationService, redisService, S3Service } from "../../common/service";
+import {   redisService, S3Service } from "../../common/service";
 import { PostRepository, UserRepository } from "../../DB/repository";
 import { BadRequestException, NotFoundException } from "../../common/exception";
 import { randomUUID } from "crypto";
 import { createObjectId } from "../../common/utils/mongoose";
 import { getAvailability } from "../../common/utils/post";
 import { IPaginate, PaginationDTO } from "../../common/types/pagination.types";
+import { notificationService } from "../notification/notification.service";
 class PostService {
     private readonly s3Service: S3Service
     private readonly userRepository: UserRepository

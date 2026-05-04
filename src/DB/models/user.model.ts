@@ -39,7 +39,7 @@ const userSchema = new Schema<IUser>({
         name : String
     } ,
 
-    deletedAt: {type:Date } ,
+    deletedAt: { type: Date, default: null },
     restoredAt: {type:Date }
 
 } , {
@@ -89,7 +89,16 @@ userSchema.pre(["findOne" , "find"], async function(){
     
 })
 
-
+userSchema.pre( ["deleteOne" , "findOneAndDelete"], async function(){
+    
+    const query = this.getQuery()
+    if(query['force']  === true  ){
+        this.setQuery({...query})
+    }else{
+        this.setQuery({  deletedAt:{$exists: true } , ...query })
+    }
+    
+})
 
 userSchema.pre( ["updateOne" , "findOneAndUpdate"], async function(){
     const update = this.getUpdate() as HydratedDocument<IUser>
@@ -110,14 +119,6 @@ userSchema.pre( ["updateOne" , "findOneAndUpdate"], async function(){
     
 })
 
-userSchema.pre( ["deleteOne" , "findOneAndDelete"], async function(){
-    
-    const query = this.getQuery()
-    if(query['force']  === true  ){
-        this.setQuery({...query})
-    }else{
-        this.setQuery({  deletedAt:{$exists: true } , ...query })
-    }
-    
-})
+
+
 export const UserModel = models['User'] || model<IUser>("User", userSchema);

@@ -7,10 +7,11 @@ import { createNumberOtp } from "../../common/utils/otp";
 import { compareHash, generateHash } from "../../common/utils/security";
 import { UserRepository } from "../../DB/repository/user.repository";
 import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDTO, SignupDTO, VerifyEmailOtpDTO } from "./auth.dto"
-import { notificationService,  redisService, } from "../../common/service";
+import {   redisService, } from "../../common/service";
 import { TokenService } from "../../common/service/token.service";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { CLIENT_ID } from "../../config/config";
+import { notificationService } from "../notification/notification.service";
 
 
 export class AuthService {
